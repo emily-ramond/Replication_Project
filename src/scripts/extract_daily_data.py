@@ -1,39 +1,60 @@
+#IMPORT STATEMENTS
 import pandas as pd
 import csv
 import regex as re
 import os
 from pathlib import Path
 
+#function to convert the .TXT file to CSV file
 def convert_txt_to_csv(tel):
+    """Takes in the specific teleconnection value (epo, nao, pna, wpo) and reads in the associated text file. 
+    Creates a """
     file_name = f'{tel}.reanalysis.t10trunc.1948-present.txt'
     cwd = os.getcwd()
     file_path = f'{cwd}/src/data/teleconn/{file_name}'
     with open(file_path,'r') as f:
-        lines = f.readlines()
-    data = []
+        lines = f.readlines() #reads lines of each file 
+    data = [] 
     pat = '[\d\.]+'
+    #for each line
     for line in lines:
+        #find all regex pattern matches
         t = re.findall(pat,line)
+        #appends to list
         data.append(t)
+    #make a df of the data 
     df = pd.DataFrame(data)
+    #rename cols of df
     df = df.rename(columns={0:'year',1:'month',2:'day',3:'level'})
+    #sets teleconnection value to the value inputted 
     df['tel'] = tel
     return df
 
+#all teleconnection names 
 teleconnections = ['epo','nao','pna','wpo']
+#list to collect all df objects 
 dfs = []
+#loops through each teleconnection
 for t in teleconnections:
+    #creates a df for each tele
     df = convert_txt_to_csv(t)
+    #appends to df list
     dfs.append(df)
+    
+#combine the dataframes
 combined_df = pd.concat(dfs)
 dates = ['year','month','day']
+#converts all date columns to int type
 for col in dates:
     combined_df[col] = combined_df[col].astype(int)
+    
 #print(combined_df.head())
 #cwd = os.getcwd()
 #file_path = f'{cwd}/src/data/daily_data.csv'
 #combined_df.to_csv(file_path)
-sorted_df = combined_df.sort_values(by = dates)
+
+#sorts the df by date. 
+sorted_df = combined_df.sort_values(by = dates) 
 
 
 
@@ -53,6 +74,7 @@ def extract_column_data(tel,start):
     return c_list
 
 def create_csv(offset):
+    """ Function to create a CSV of offset data to account for dates in a -15 to 15 format."""
     data = {}
     if offset == 2:
         start = -22
